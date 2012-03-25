@@ -1,0 +1,62 @@
+================================================================================
+
+Title: Release Notes - UVM Connect
+
+================================================================================
+
+These notes provide information about version updates, bugfixes, known
+issues, changes to supported platforms, etc. Updates and changes made prior to
+public release are not included.
+
+================================================================================
+Group: UVM Connect v2.1.4 - February 2012
+================================================================================
+
+Notes for release v2.1.4.
+
+Key additions to this release include
+
+- Improved TLM2 support
+
+- More comprehensive User Guide with supporting examples, all documented
+
+- Support for hierarchical connections, i.e. wrapping foreign models and
+  promoting their TLM connections to native TLM ports using UVM Connect. 
+
+- Additional examples, reorganized.
+  All examples are found in $UVMC_HOME/examples. See the <Overview> page
+  in the online documentation for information on running the examples
+  included in this kit. 
+
+- HTML documentation added.
+
+While the kit is intended to work with all three simulators, correct operation
+on other simulators has not been verified.
+
+Version requirements: 
+
+UVM 1.1a - see <Overview> for instructions on enabling
+earlier versions
+
+Questa 10.1 - see <Overview> for minor restrictions for use with 10.0c or later.
+
+
+| //------------------------------------------------------------//
+| //   Copyright 2009-2012 Mentor Graphics Corporation          //
+| //   All Rights Reserved Worldwid                             //
+| //                                                            //
+| //   Licensed under the Apache License, Version 2.0 (the      //
+| //   "License"); you may not use this file except in          //
+| //   compliance with the License.  You may obtain a copy of   //
+| //   the License at                                           //
+| //                                                            //
+| //       http://www.apache.org/licenses/LICENSE-2.0           //
+| //                                                            //
+| //   Unless required by applicable law or agreed to in        //
+| //   writing, software distributed under the License is       //
+| //   distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR   //
+| //   CONDITIONS OF ANY KIND, either express or implied.  See  //
+| //   the License for the specific language governing          //
+| //   permissions and limitations under the License.           //
+| //------------------------------------------------------------//
+

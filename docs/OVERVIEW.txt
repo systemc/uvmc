@@ -1,0 +1,569 @@
+
+--------------------------------------------------------------------------------
+Title: Introduction to UVM Connect
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+
+Group: Overview
+
+--------------------------------------------------------------------------------
+
+The UVM Connect library provides TLM1 and TLM2 connectivity between
+SystemC and SystemVerilog models and components. It also provides a
+UVM Command API for accessing and controlling UVM simulation from
+SystemC (or C or C++).
+
+(see UVMC_Overview_1.png)
+
+
+
+Topic: Purpose
+--------------
+
+UVM Connect enables the following use models, all designed to maximize IP reuse.
+
+Abstraction Refinement - Reuse your SC architectural models as reference
+       models in SV verification.
+
+Expansion of VIP Inventory - More off-the-shelf VIP is available when
+       you are no longer confined to VIP written in the language of your
+       testbench.
+
+Leveraging each language - Each language has its strengths. You can
+       leverage SV's powerful constraint solvers and UVM's sequences to
+       provide random stimulus to your SC architectural models. And you
+       can leverage SC's speed and capacity for verification of untimed
+       or loosely timed system-level environments.
+
+Direct access to UVM - The UVM Command API
+       provides a means to wait for UVM phase transitions, raise and
+       drop objections to phase transitions, set and get configuration,
+       issue UVM-formatted reports, set report filters, print UVM
+       topology, set factory overrides by instance and type, and more.
+
+The UVM Connect library makes connecting TLM models in SystemC and UVM
+in SystemVerilog a relatively straightforward process. However, because
+UVM Connect is effectively integrating several technologies, you'll need
+to have basic knowledge of SystemC, SystemVerilog, and the UVM, and TLM
+standards. Refer to the <References> section for a partial list of
+relevant documentation. You may also wish to read the brief <TLM Review>
+included in this documentation. 
+
+
+
+Topic: Key Features
+-------------------
+
+This section enumerates some important characteristics of UVM Connect.
+
+Simplicity - Object-based data transfer is accomplished with very little
+             preparation needed by the user. 
+
+Optional   - The UVM Connect library is provided as a separate, optional
+             package to UVM. You do not need to import the package if your
+             environment does not require cross-language TLM connections or
+             access to the UVM Command API.
+
+Works with Standard UVM - UVM Connect works with the free, open-source
+             Accellera UVM 1.1a and later. With a small modification,
+             UVM Connect can work with previous UVM open-source releases.
+
+Enhances native modeling methodology - UVM Connect does not impose a foreign
+             methodology nor require your models or transactions to inherit
+             from a base class. Your TLM models can fully exploit the features
+             of the language in which they are written.
+
+Supports existing models - Your existing TLM models in both SystemVerilog and
+             SystemC can be reused in a mixed-language context without
+             modification.
+
+Reinforces TLM modeling standards - The UVM Connect reinforces the principles
+             and purpose of the TLM interface standard--enabling independently
+             designed models to communicate without directly referring to each other.
+             Such models become highly reusable. They can be integrated in both
+             native and mixed-language environments without modification.
+             See <TLM Review> for an introduction to TLM concepts and principles.
+
+
+Topic: Definitions
+------------------
+
+Definitions for terms used throughout this document.
+
+SV  - Short for SystemVerilog, or UVM in SystemVerilog. The context
+      will make clear which. In figures, UVM SV components are shown
+      in shades of blue.
+
+SC  - Short for SystemC. In figures, SC components are shown in shades of yellow.
+
+model - Functionality encapsulated by a class. A model is typically a
+      subtypes (derived from) of ~sc_module~ in SC and ~uvm_component~
+      in SV. Although dynamic in nature, models deriving from these classes
+      are quasi-static; they are created during elaboration of the testbench
+      and continue to exist throughout simulation. 
+
+component - Synonymous with ~model~, above.
+
+hierarchical component - A model that contains one or more models. The
+      hierarchical component is often referred to as the ~parent~ of the
+      sub-components, which are referred to as its ~children~.
+
+
+See <TLM Review> for definitions of TLM-related concepts and terms.
+
+
+
+Topic: Navigating the Documentation
+-----------------------------------
+
+How to navigate the documentation.
+
+Click a major heading on the navigation bar at left to expand or collapse the
+list of items under that heading.  
+
+Each page in a major topic or adaptor class is summarized in a box like the
+one at the top of this page. Each heading or method has a one-line summary 
+description for easy reference.  Clicking on the heading or method will take
+you to its full description.
+
+Clicking on the title of the summay box or full description heading will take
+you to the actual source file, if available.
+
+Click on ~Index~ to look up a class or method name whose absolute location
+is unknown, or you can enter a keyword in the Search box to see a list of
+matches.
+
+
+
+--------------------------------------------------------------------------------
+
+Group: Getting Started
+
+--------------------------------------------------------------------------------
+
+This section specifies the requirements for compiling and using the UVMC
+library and included examples.
+
+
+
+Topic: UVM Requirements
+-----------------------
+
+The latest UVM version requirements
+
+  UVM           - 1.1a or later
+
+The latest version of UVM can be downloaded from Accellera.
+(http://www.accellera.org/activities/committees/vip)
+
+UVM 1.1a adds a simple accessor method to uvm_port_base #(IF) for
+getting the interface mask of the port that is required by UVMC:
+
+| 376a374,377
+| >   function int m_get_if_mask();
+| >     return m_if_mask;
+| >   endfunction
+
+You can enable UVM 1.0p1 or UVM-1.1 to work with UVM Connect by added this
+method to the uvm_port_base #(IF) class in ~UVM_HOME/src/base/uvm_port_base.svh~.
+Either make the edit as above directly in your source, or replace the
+source file with the one included the ~UVM_HOME/compatibility~ directory
+in this kit. No other changes have occurred in this file between UVM 1.0p1
+and 1.1a, so it is OK to replace the whole file.
+
+
+
+
+Topic: Simulator Requirements
+-----------------------------
+
+The latest simulator requirements
+
+  Mentor Questa - 10.1 or later.
+                  The UVMC library will work with 10.0d and later provided
+                  your UVM_LIB and UVMC_LIB environment variables point to
+                  the same location (which they do by default) and you
+                  recompile the UVM and UVMC libraries as described in
+                  <Compiling Libraries>.
+  Synopsys VCS  - unknown
+  Cadence IUS   - unknown
+
+UVMC is intended to work with all simulators--it uses standard SV, using
+only DPI-C behind the scenes. However, there are likely some simulator-specific
+limitations or differences that would prevent out-of-box compilation on
+non-Questa tools, and Mentor is only able to qualify on Questa. Users of
+other tools are encouraged to try to compile UVMC and report back anything
+we can do to make the library more portable, to the extent allowed by your
+license agreements and NDAs with those vendors.
+
+
+
+Topic: Platform Requirements
+----------------------------
+
+The latest platform requirements
+
+  Mentor Questa - At present, only Linux 32 and 64-bit platforms are
+                  supported. Specific OS and version support is the
+                  same as with Questa.
+  Synopsys VCS  - unknown
+  Cadence IUS   - unknown
+
+
+
+Topic: Env Setup
+----------------
+
+How to prepare your environment
+
+To run any example, you need compiled UVM and UVMC libraries.
+Precompiled libraries for Questa 1.1 for 32 and 64-bit Linux are
+included at the default location ($UVMC_HOME/lib), so this
+step is not necessary if you are running Questa 1.1 on Linux.
+
+The following environment variables should be set before compiling the
+UVM and UVMC libraries (if needed), and before running the examples
+included in this kit.
+
+PATH -      Your simulator should be included in your PATH and meet
+            the minimum version requirements stated earlier. If you
+            need to (or plan to) compile the UVM Connect and/or UVM
+            libraries, your path must also point to a GCC compiler
+            supported by the simulator. Refer to your simulator
+            documentation for such requirements.
+
+UVM_HOME -  The location of the UVM source distribution that meets
+            the minimum version requirements. See <UVM Requirements>
+            for details. This path is needed for compiling the
+            UVM library, and for locating the ~uvm_macros.svh~ file
+            when compiling the examples. 
+
+UVMC_HOME - The location of the UVMC library source. This is needed 
+            when compiling the UVMC library from outside the install
+            directory. It is also needed for locating the UVMC's SC
+            headers and SV's uvmc_macros.svh when compiling the examples.
+
+UVM_LIB -   Specifies the location to put the compiled UVM library
+            Default: ~$UVMC_HOME/lib/uvmc_lib~
+
+UVMC_LIB -  Specifies the location to put the compiled UVMC library
+            Default: ~$UVMC_HOME/lib/uvmc_lib~
+
+
+The UVMC library is intended to be portable across all simulators.
+If you had to make changes to the UVMC library source to accommodate your
+simulator, please let Mentor know via
+Verification Academy (http::/verificationacademy.com), your 
+field representative(s), or Mentor's general support line.
+
+If you have a writable installation of the UVMC kit, you can
+compile the libraries and examples directly within the UVMC tree. In this
+case, you only need to specify the UVM_HOME environment variable.
+
+It is possible to override the environment variable settings via Makefile
+arguments of the same name.  This is not recommended because it will be
+easy to inadvertently compile libraries and examples using different paths.
+
+The following statements set the four environment variables. For convenience,
+you may wish to put these in a setup script or in your .cshrc / .profile.
+
+  | > setenv UVM_HOME <path to UVM 1.1a>
+  | > setenv UVMC_HOME <path to UVMC install dir>
+  | > setenv UVM_LIB $UVMC_HOME/lib/uvmc_lib
+  | > setenv UVMC_LIB $UVM_LIB
+
+
+
+Topic: Compiling Libraries
+--------------------------
+
+How to compile the UVM and UVMC libraries
+
+Compiled UVM and UVMC libraries are required before you can run
+the examples.  Compilation is done separately from the examples in
+accordance with standard practice.
+
+This kit provides a Makefile in $UVMC_HOME/lib for compiling the UVM and
+UVMC libraries. It is geared toward Questa compilation, so it will need
+to be adapted for use with other simulators.  Please note the following:
+
+- This kit provides a precompiled UVM 1.1a and UVMC library for Questa 1.1
+Linux 32 and 64-bit. For this platform/simulator combination, you should
+be able to skip this section and go straight to running the examples.
+
+- Before you attempt to compile, be sure you have prepared your environment
+as described in <Env Setup>.
+
+- If you are compiling directly from the UVMC_HOME/lib directory, the
+Makefile uses default paths for UVMC_HOME, UVMC_LIB, and UVM_LIB. In this
+case, you need only define UVM_HOME via environment variable or make
+command line argument.
+
+To compile the UVM and UVMC libraries for both 32 and 64-bit Linux
+
+| > cd $UVMC_HOME/lib
+| > make clean all
+
+This cleans out any previously compiled libraries then builds the 32 and
+64-bit libraries for both UVM and UVMC.
+
+To build only 32 or only 64 bit libraries replace ~all~ with ~lib32~ or
+~lib64~. 
+
+| > cd $UVMC_HOME/lib
+| > make clean lib32
+
+Presently, the Makefile is geared for Questa compilation on Linux
+platforms. If you need to compile on Windows or for another simulator,
+modifications to this and the example Makefiles are expected.
+
+
+Topic: SV TLM Limitations
+-------------------------
+
+TLM2 features not fully implemented in UVM
+
+- Transport debug interface - tlm_transport_dbg_if
+
+- Direct member interface - tlm_fw_direct_mem_if, tlm_bw_direct_mem_if
+
+- Core initiator and target sockets - UVM provides sockets that provide
+  blocking or non-blocking transport, but not both.
+
+- Quantum keeper
+
+- Payload event queue
+
+- Instance-specific extensions
+
+Should your SC models rely on SV-side implementation of these interfaces,
+further adaptation may be required to achieve successful interoperability.
+
+There are also several limitations in the current UVM implementation.
+
+- The core sockets in standard TLM2, ~tlm_initiator_socket~ and
+  ~tlm_target_socket~, have no direct counterpart in UVM SV. The standard
+  defines initiator and target sockets that use/implement both the b_transport
+  and nb_transport interfaces. UVM defines sockets that implement either
+  blocking or non-blocking but not both. UVM Connect will still allow
+  connections from SC initiator sockets to SV target UVM sockets, but a
+  run-time fatal error will occur if a blocking call is made to a
+  non-blocking UVM socket (e.g.  uvm_tlm_nb_target_socket) or a
+  non-blocking call is made to a blocking UVM socket
+  (e.g. uvm_tlm_b_target_socket).  Refer to Mantis 3682 
+  (http://www.eda.org/svdb/view.php?id=3682)
+
+- The ~uvm_tlm_generic_payload~ needs several fixes. Refer to
+  (http://www.eda.org/svdb/view.php?id=3983)
+
+- UVM does not fully implement TLM1 non-blocking interfaces. The ~ok_to_put~,
+  ~ok_to_get~, and ~ok_to_peek~ methods are defined in the standard to return an
+  event that is triggered once the non-blocking port is able to complete a put,
+  get, or peek operation, respectively. Calls to these interface methods by
+  connected SC-side ports will produce a run-time error and return an event
+  that will never trigger.
+
+
+Topic: Starting SC & SV
+-----------------------
+
+Issues associated with starting SystemC and SystemVerilog
+
+SystemC typically elaborates and begins simulation before SystemVerilog has
+completed elaboration. If the SC side attempts to communicate with
+SystemVerilog too early, you may get run-time errors or undefined behavior.
+SC-side ports that are bound to SV-side exports or imps are especially
+vulnerable to this condition. UVM Connect tries to prevent this from
+happening in two different ways:
+
+- All UVM Command functions block until SV is ready
+
+- All SC-side calls to TLM ports that are registered for connection across
+  the language boundary will block until its cross-language connection
+  is made.
+
+The implication is that UVMC TLM and Command calls must be made from an
+SC thread process.
+
+
+--------------------------------------------------------------------------------
+
+Group: About the Examples
+
+--------------------------------------------------------------------------------
+
+This section describes how to run the examples included in this kit.
+The examples show how UVMC can be used to integrate IP in a mixed SC and
+SV environment, without modifying existing IP.
+
+Before attempting to run the examples, be sure to review the <Getting Started>
+section. Check for support for your platform, confirm that the UVM and UVMC
+libraries are compiled, and make sure your environment variables are set
+properly. 
+
+
+Topic: Categories
+-----------------
+
+The UVM Connect kit provides examples in four major categories--connections,
+converters, field type support, and UVM commands
+
+Connections - Shows how to establish TLM connections across the language
+             boundary. If you are not using the TLM generic payload 
+             transaction type, you will also need to define a converter for
+             your transaction.  See <Connection Examples>
+
+Converters - Provides examples of writing (or generating) transaction
+             converters. See <Converter Examples>
+
+Field Types - Shows how to pack/unpack each data type that can be
+             declared members (properties, or fields) of your transaction.
+             See <Type-Support Examples>
+
+UVM Commands - Demonstrates use of the UVM Command API for accessing and
+             controlling UVM simulation from SystemC. For example, you can
+             set configuration, override the factory, issue reports, and
+             control phase progression from outside SV using this API.
+             See <UVM Command Examples>
+
+
+
+Topic: How to Run
+-----------------
+
+All examples can be found in the ~$UVMC_HOME/examples~ directory.
+Before attempting to run any example, be sure you have prepared your
+environment and compiled the UVM and UVMC libraries. See <Getting Started>
+for how to do this.
+
+To run the examples, ~cd~ into the examples directory for the category of
+your choice (connections, converters, commands, field_types). Then type
+~make~ or ~make help~ to get a menu of examples to run in that category.
+
+Most examples utilize a common set of simple producer, consumer, and
+scoreboard models. The models use standard SystemC / UVM coding guidelines
+and provide standard TLM ports and exports for external communication.
+None of the models contain references to UVM Connect or any other external
+context, which is as it should be.
+
+To run an individual example, ~cd~ into the examples directory
+of your choice.
+
+  |> cd $UVMC_HOME/examples/commands 
+
+Type ~make~ without any arguments to get a list of all available examples
+in that directory.
+
+Then, select an example from the menu. For eaxmple:
+
+  |> make phasing
+
+This runs the 'phasing' example with the UVM source location defined by
+the ~UVM_HOME~ environment variable and the UVM and UVMC compiled
+libraries at their default location, ~../../lib/uvmc_lib~.
+
+To run all ~UVM Command~ examples
+
+  |> make all
+
+The ~clean~ target deletes all the simulation files produced from previous
+runs.
+
+  |> make clean
+
+You can also combine targets in one command line
+
+  |> make clean reporting
+
+
+
+Mind your ENV:
+
+It is important that you use the same value for UVM_HOME and UVMC_HOME
+for compiling and running examples as for compiling the libraries
+themselves.  The best way to ensure this is to define the environment
+variables once, perhaps using a shell script or .cshrc file.
+
+  | > source my_uvmc_setup.sh
+  | Setting required UVM and UVMC environment variables...
+  |
+  | > cd $UVMC_HOME/lib
+  | > make clean all
+  | >
+  | > cd ../examples/commands
+  | > make all
+  | > cd ../converters
+  | > make all
+  | > ...
+
+
+Running the examples outside the install tree:
+
+To run the examples outside the UVMC_HOME install tree, all four 
+environment variables must be defined either as environment variables
+or via the ~make~ command line. See <Getting Started> for details.
+
+Each example directory relies on a master Makefile in the root examples
+directory. Copy the entire examples directory from the install location
+into a local, writable area, perhaps in your HOME directory or a shared
+workspace. Then ~cd~ to any subdirectory and run ~make~ as before.
+
+
+--------------------------------------------------------------------------------
+
+Group: References
+
+--------------------------------------------------------------------------------
+
+A partial list of sources for information on SystemC, SystemVerilog, UVM, and
+related topics
+
+ - [1] Standard SystemC Language Reference Manual; IEEE 1666-2011, March 8, 2011.
+       http://standards.ieee.org/getieee/1666/download/1666-2011.pdf
+
+ - [2] IEEE Standard for SystemVerilog-Unified Hardware Design, Specification,
+       and Verification Language; IEEE 1800-2009; December 11, 2009
+
+ - [3] OSCI TLM 2.0 Language Reference Manual, version TLM 2.0.1,
+       Document JA32; copyright Open SystemC Initiative, July 2009
+       (absorbed into [1] above)
+
+ - [4] Universal Verification Methodology (UVM) Accellera; 
+       http://www.accellera.org/activities/vip
+
+ - [5] Verification Academy - http://verificationacademy.com
+
+ - [6] UVM Cookbook - http://verificationacademy.com/uvm-ovm
+
+ - [7] UVM World - http://uvmworld.com
+
+ - [8] "Are UVM/OVM Macros Evil? A Cost-Benefit Analysis"; DVCon 2011,
+       Feb 2011. http://verificationacademy.com/uvm-ovm/MacroCostBenefit
+
+
+--------------------------------------------------------------------------------
+
+Group: Copyright
+
+--------------------------------------------------------------------------------
+
+| //------------------------------------------------------------//
+| //   Copyright 2009-2012 Mentor Graphics Corporation          //
+| //   All Rights Reserved Worldwid                             //
+| //                                                            //
+| //   Licensed under the Apache License, Version 2.0 (the      //
+| //   "License"); you may not use this file except in          //
+| //   compliance with the License.  You may obtain a copy of   //
+| //   the License at                                           //
+| //                                                            //
+| //       http://www.apache.org/licenses/LICENSE-2.0           //
+| //                                                            //
+| //   Unless required by applicable law or agreed to in        //
+| //   writing, software distributed under the License is       //
+| //   distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR   //
+| //   CONDITIONS OF ANY KIND, either express or implied.  See  //
+| //   the License for the specific language governing          //
+| //   permissions and limitations under the License.           //
+| //------------------------------------------------------------//
+
